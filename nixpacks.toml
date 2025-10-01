@@ -1,0 +1,11 @@
+# nixpacks.toml
+
+[phases.setup]
+# Add the system libraries required by Playwright
+pkgs = [
+  "libx11", "libxcomposite", "libxcursor", "libxdamage",
+  "libxext", "libxfixes", "libxi", "libxrandr", "libxrender",
+  "libxss", "libxtst", "alsa-lib", "cups", "expat", "fontconfig",
+  "gcc-unwrapped", "gdk-pixbuf", "glib", "gtk3", "nspr", "nss",
+  "pango", "udev", "at-spi2-atk", "libdrm", "mesa", "vulkan-loader"
+]
