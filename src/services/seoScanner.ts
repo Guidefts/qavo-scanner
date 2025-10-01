@@ -31,12 +31,16 @@ export class SEOScanner {
         issues.push(await this.createIssue(testId, scanId, url, 'Title Tag Too Long', `The title tag is ${title.length} characters long. It should be 60 characters or less.`, 'medium', 'Shorten the title tag to be more concise and impactful.'));
       }
 
-      const metaDescriptionElement = await page.locator('meta[name="description"]').first();
-      const metaDescription = await metaDescriptionElement.getAttribute('content');
-      if (!metaDescription) {
+      try {
+        const metaDescriptionElement = await page.locator('meta[name="description"]').first();
+        const metaDescription = await metaDescriptionElement.getAttribute('content');
+        if (!metaDescription) {
+          issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
+        } else if (metaDescription.length > 160) {
+          issues.push(await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.'));
+        }
+      } catch (e) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
-      } else if (metaDescription.length > 160) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.'));
       }
 
       const h1Count = await page.locator('h1').count();

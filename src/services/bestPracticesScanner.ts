@@ -31,7 +31,11 @@ export class BestPracticesScanner {
         }
       });
 
-      await page.goto(url, { waitUntil: 'networkidle' });
+      try {
+        await page.goto(url, { waitUntil: 'networkidle' });
+      } catch (e) {
+        console.error('Best practices scan navigation error:', e);
+      }
 
       if (consoleErrors.length > 0) {
         issues.push(await this.createIssue(testId, scanId, url, 'Console Errors Found', `The page has ${consoleErrors.length} console errors.`, 'medium', 'Check the browser console for details and fix the reported errors.'));

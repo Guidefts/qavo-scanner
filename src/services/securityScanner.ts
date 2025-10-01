@@ -24,19 +24,23 @@ export class SecurityScanner {
       if (!test) throw new Error('Failed to create Security test record.');
       testId = test.id;
 
-      const response = await page.goto(url);
-      const securityHeaders = response?.headers() || {};
+      try {
+        const response = await page.goto(url);
+        const securityHeaders = response?.headers() || {};
 
-      if (!url.startsWith('https' )) {
-        issues.push(await this.createIssue(testId, scanId, url, 'No HTTPS', 'The page is not served over HTTPS.', 'high', 'Enable HTTPS to secure the connection between the server and the user.'));
-      }
+        if (!url.startsWith('https' )) {
+          issues.push(await this.createIssue(testId, scanId, url, 'No HTTPS', 'The page is not served over HTTPS.', 'high', 'Enable HTTPS to secure the connection between the server and the user.'));
+        }
 
-      if (!securityHeaders['content-security-policy']) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing Content-Security-Policy Header', 'The Content-Security-Policy (CSP) header is missing.', 'medium', 'Implement a strict CSP to prevent XSS and other injection attacks.'));
-      }
+        if (!securityHeaders['content-security-policy']) {
+          issues.push(await this.createIssue(testId, scanId, url, 'Missing Content-Security-Policy Header', 'The Content-Security-Policy (CSP) header is missing.', 'medium', 'Implement a strict CSP to prevent XSS and other injection attacks.'));
+        }
 
-      if (!securityHeaders['x-frame-options']) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing X-Frame-Options Header', 'The X-Frame-Options header is missing.', 'medium', 'Use the X-Frame-Options header to prevent clickjacking attacks.'));
+        if (!securityHeaders['x-frame-options']) {
+          issues.push(await this.createIssue(testId, scanId, url, 'Missing X-Frame-Options Header', 'The X-Frame-Options header is missing.', 'medium', 'Use the X-Frame-Options header to prevent clickjacking attacks.'));
+        }
+      } catch (e) {
+        console.error('Security scan navigation error:', e);
       }
 
       const score = Math.max(0, 100 - (issues.length * 10));
