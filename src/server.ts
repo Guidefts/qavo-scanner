@@ -1,3 +1,8 @@
+console.log("--- STARTING SERVER ---");
+console.log("SUPABASE_URL from env:", process.env.SUPABASE_URL);
+console.log("SUPABASE_SERVICE_ROLE_KEY from env:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Exists" : "MISSING or EMPTY");
+
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
