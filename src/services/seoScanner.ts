@@ -24,31 +24,39 @@ export class SEOScanner {
       if (!test) throw new Error('Failed to create SEO test record.');
       testId = test.id;
 
+      // Check title
       const title = await page.title();
       if (!title) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing Title Tag', 'The title tag is missing from the page.', 'high', 'Add a unique and descriptive title tag to the page head.'));
+        await this.createIssue(testId, scanId, url, 'Missing Title Tag', 'The title tag is missing from the page.', 'high', 'Add a unique and descriptive title tag to the page head.');
+        issues.push({ severity: 'high' });
       } else if (title.length > 60) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Title Tag Too Long', `The title tag is ${title.length} characters long. It should be 60 characters or less.`, 'medium', 'Shorten the title tag to be more concise and impactful.'));
+        await this.createIssue(testId, scanId, url, 'Title Tag Too Long', `The title tag is ${title.length} characters long. It should be 60 characters or less.`, 'medium', 'Shorten the title tag to be more concise and impactful.');
+        issues.push({ severity: 'medium' });
       }
 
-      const metaElements = await page.locator('meta[name="description"]');
-      const metaCount = await metaElements.count();
-      if (metaCount === 0) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
-      } else {
-        const metaDescription = await metaElements.first().getAttribute('content');
+      // Check meta description
+      try {
+        const metaDescription = await page.locator('meta[name="description"]').getAttribute('content');
         if (!metaDescription) {
-          issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
+          await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.');
+          issues.push({ severity: 'high' });
         } else if (metaDescription.length > 160) {
-          issues.push(await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.'));
+          await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.');
+          issues.push({ severity: 'medium' });
         }
+      } catch (e) {
+        await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.');
+        issues.push({ severity: 'high' });
       }
 
+      // Check H1
       const h1Count = await page.locator('h1').count();
       if (h1Count === 0) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing H1 Tag', 'The page is missing an H1 tag.', 'high', 'Add a single, descriptive H1 tag to the page to indicate the main topic.'));
+        await this.createIssue(testId, scanId, url, 'Missing H1 Tag', 'The page is missing an H1 tag.', 'high', 'Add a single, descriptive H1 tag to the page to indicate the main topic.');
+        issues.push({ severity: 'high' });
       } else if (h1Count > 1) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Multiple H1 Tags', `The page has ${h1Count} H1 tags. There should be only one.`, 'medium', 'Consolidate the H1 tags into a single, primary heading.'));
+        await this.createIssue(testId, scanId, url, 'Multiple H1 Tags', `The page has ${h1Count} H1 tags. There should be only one.`, 'medium', 'Consolidate the H1 tags into a single, primary heading.');
+        issues.push({ severity: 'medium' });
       }
 
       const score = Math.max(0, 100 - (issues.length * 10));
@@ -69,8 +77,8 @@ export class SEOScanner {
     return issues;
   }
 
-  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string) {
-    const issuePayload = {
+  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string): Promise<void> {
+    await this.supabase.from('qa_issues').insert({
       test_id: testId,
       scan_id: scanId,
       title,
@@ -80,8 +88,6 @@ export class SEOScanner {
       location_url: url,
       recommendation,
       status: 'open',
-    };
-    await this.supabase.from('qa_issues').insert(issuePayload);
-    return { severity };
+    });
   }
 }

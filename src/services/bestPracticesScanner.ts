@@ -34,7 +34,8 @@ export class BestPracticesScanner {
       await page.goto(url, { waitUntil: 'networkidle' });
 
       if (consoleErrors.length > 0) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Console Errors Found', `The page has ${consoleErrors.length} console errors.`, 'medium', 'Check the browser console for details and fix the reported errors.'));
+        await this.createIssue(testId, scanId, url, 'Console Errors Found', `The page has ${consoleErrors.length} console errors.`, 'medium', 'Check the browser console for details and fix the reported errors.');
+        issues.push({ severity: 'medium' });
       }
 
       const score = Math.max(0, 100 - (issues.length * 10));
@@ -55,8 +56,8 @@ export class BestPracticesScanner {
     return issues;
   }
 
-  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string) {
-    const issuePayload = {
+  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string): Promise<void> {
+    await this.supabase.from('qa_issues').insert({
       test_id: testId,
       scan_id: scanId,
       title,
@@ -66,8 +67,6 @@ export class BestPracticesScanner {
       location_url: url,
       recommendation,
       status: 'open',
-    };
-    await this.supabase.from('qa_issues').insert(issuePayload);
-    return { severity };
+    });
   }
 }

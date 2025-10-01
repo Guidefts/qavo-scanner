@@ -28,15 +28,18 @@ export class SecurityScanner {
       const securityHeaders = response?.headers() || {};
 
       if (!url.startsWith('https' )) {
-        issues.push(await this.createIssue(testId, scanId, url, 'No HTTPS', 'The page is not served over HTTPS.', 'high', 'Enable HTTPS to secure the connection between the server and the user.'));
+        await this.createIssue(testId, scanId, url, 'No HTTPS', 'The page is not served over HTTPS.', 'high', 'Enable HTTPS to secure the connection between the server and the user.');
+        issues.push({ severity: 'high' });
       }
 
       if (!securityHeaders['content-security-policy']) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing Content-Security-Policy Header', 'The Content-Security-Policy (CSP) header is missing.', 'medium', 'Implement a strict CSP to prevent XSS and other injection attacks.'));
+        await this.createIssue(testId, scanId, url, 'Missing Content-Security-Policy Header', 'The Content-Security-Policy (CSP) header is missing.', 'medium', 'Implement a strict CSP to prevent XSS and other injection attacks.');
+        issues.push({ severity: 'medium' });
       }
 
       if (!securityHeaders['x-frame-options']) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing X-Frame-Options Header', 'The X-Frame-Options header is missing.', 'medium', 'Use the X-Frame-Options header to prevent clickjacking attacks.'));
+        await this.createIssue(testId, scanId, url, 'Missing X-Frame-Options Header', 'The X-Frame-Options header is missing.', 'medium', 'Use the X-Frame-Options header to prevent clickjacking attacks.');
+        issues.push({ severity: 'medium' });
       }
 
       const score = Math.max(0, 100 - (issues.length * 10));
@@ -57,8 +60,8 @@ export class SecurityScanner {
     return issues;
   }
 
-  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string) {
-    const issuePayload = {
+  private async createIssue(testId: string, scanId: string, url: string, title: string, description: string, severity: string, recommendation: string): Promise<void> {
+    await this.supabase.from('qa_issues').insert({
       test_id: testId,
       scan_id: scanId,
       title,
@@ -68,8 +71,6 @@ export class SecurityScanner {
       location_url: url,
       recommendation,
       status: 'open',
-    };
-    await this.supabase.from('qa_issues').insert(issuePayload);
-    return { severity };
+    });
   }
 }
