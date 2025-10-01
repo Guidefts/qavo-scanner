@@ -37,8 +37,8 @@ export class PerformanceScanner {
                 onlyCategories: ['performance'],
             });
 
-            const audits = lighthouseResult.lhr.audits;
-            const score = (lighthouseResult.lhr.categories.performance.score || 0) * 100;
+            const audits = (lighthouseResult as any).lhr.audits;
+            const score = ((lighthouseResult as any).lhr.categories.performance.score || 0) * 100;
 
             // Example: Check for a specific audit failure
             if (audits['server-response-time']?.score !== 1) {
