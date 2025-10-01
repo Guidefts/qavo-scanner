@@ -1,5 +1,5 @@
 import { chromium, Browser, Page } from 'playwright';
-import { AxePuppeteer } from '@axe-core/playwright';
+import AxePuppeteer from '@axe-core/playwright';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
