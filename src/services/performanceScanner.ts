@@ -29,7 +29,7 @@ export class PerformanceScanner {
             const browser = page.context().browser();
             if (!browser) throw new Error("Browser is not available for Lighthouse scan.");
 
-            const port = (new URL(browser.wsEndpoint())).port;
+            const port = (new URL((browser as any).wsEndpoint())).port;
             const lighthouseResult = await lighthouse(url, {
                 port: parseInt(port),
                 output: 'json',
