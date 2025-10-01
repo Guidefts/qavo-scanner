@@ -27,17 +27,14 @@ export class SecurityScanner {
       const response = await page.goto(url);
       const securityHeaders = response?.headers() || {};
 
-      // 1. Check for HTTPS
-      if (!url.startsWith('https')) {
+      if (!url.startsWith('https' )) {
         issues.push(await this.createIssue(testId, scanId, url, 'No HTTPS', 'The page is not served over HTTPS.', 'high', 'Enable HTTPS to secure the connection between the server and the user.'));
       }
 
-      // 2. Check for Content-Security-Policy header
       if (!securityHeaders['content-security-policy']) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing Content-Security-Policy Header', 'The Content-Security-Policy (CSP) header is missing.', 'medium', 'Implement a strict CSP to prevent XSS and other injection attacks.'));
       }
 
-      // 3. Check for X-Frame-Options header
       if (!securityHeaders['x-frame-options']) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing X-Frame-Options Header', 'The X-Frame-Options header is missing.', 'medium', 'Use the X-Frame-Options header to prevent clickjacking attacks.'));
       }

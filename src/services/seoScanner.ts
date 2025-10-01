@@ -24,23 +24,21 @@ export class SEOScanner {
       if (!test) throw new Error('Failed to create SEO test record.');
       testId = test.id;
 
-      // 1. Check for Title tag
       const title = await page.title();
       if (!title) {
-        issues.push(await this.createIssue(testId, scanId, url, 'Missing Title Tag', 'The <title> tag is missing from the page.', 'high', 'Add a unique and descriptive <title> tag to the page head.'));
+        issues.push(await this.createIssue(testId, scanId, url, 'Missing Title Tag', 'The title tag is missing from the page.', 'high', 'Add a unique and descriptive title tag to the page head.'));
       } else if (title.length > 60) {
         issues.push(await this.createIssue(testId, scanId, url, 'Title Tag Too Long', `The title tag is ${title.length} characters long. It should be 60 characters or less.`, 'medium', 'Shorten the title tag to be more concise and impactful.'));
       }
 
-      // 2. Check for Meta Description
-      const metaDescription = await page.getAttribute('meta[name="description"]', 'content');
+      const metaDescriptionElement = await page.locator('meta[name="description"]').first();
+      const metaDescription = await metaDescriptionElement.getAttribute('content');
       if (!metaDescription) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
-      } else if (metaDescription && metaDescription.length > 160) {
+      } else if (metaDescription.length > 160) {
         issues.push(await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.'));
       }
 
-      // 3. Check for H1 tag
       const h1Count = await page.locator('h1').count();
       if (h1Count === 0) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing H1 Tag', 'The page is missing an H1 tag.', 'high', 'Add a single, descriptive H1 tag to the page to indicate the main topic.'));
