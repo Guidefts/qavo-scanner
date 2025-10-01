@@ -1,4 +1,4 @@
-import { Page } from 'playwright';
+mport { Page } from 'playwright';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export class SEOScanner {
@@ -36,7 +36,7 @@ export class SEOScanner {
       const metaDescription = await page.getAttribute('meta[name="description"]', 'content');
       if (!metaDescription) {
         issues.push(await this.createIssue(testId, scanId, url, 'Missing Meta Description', 'The meta description is missing.', 'high', 'Add a compelling meta description to improve click-through rates from search results.'));
-      } else if (metaDescription.length > 160) {
+      } else if (metaDescription && metaDescription.length > 160) {
         issues.push(await this.createIssue(testId, scanId, url, 'Meta Description Too Long', `The meta description is ${metaDescription.length} characters long. It should be 160 characters or less.`, 'medium', 'Shorten the meta description to ensure it is fully visible in search results.'));
       }
 
