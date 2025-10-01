@@ -1,35 +1,44 @@
-console.log("--- STARTING SERVER ---");
-console.log("SUPABASE_URL from env:", process.env.SUPABASE_URL);
-console.log("SUPABASE_SERVICE_ROLE_KEY from env:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Exists" : "MISSING or EMPTY");
-
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { ScanService } from './services/scanService';
+import { ScanOrchestrator } from './services/scanOrchestrator';
+
+// --- START OF DEBUG LOGS ---
+// This helps us verify that environment variables are loaded correctly.
+console.log("--- STARTING SERVER ---");
+console.log("SUPABASE_URL from env:", process.env.SUPABASE_URL);
+console.log("SUPABASE_SERVICE_ROLE_KEY from env:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Exists" : "MISSING or EMPTY");
+// --- END OF DEBUG LOGS ---
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080; // Railway provides the PORT env var
 
 app.use(cors());
 app.use(express.json());
 
-const scanService = new ScanService();
+const scanOrchestrator = new ScanOrchestrator();
 
-// Initialize the scan service
-scanService.initialize().catch(console.error);
+// Initialize browser pool on startup
+scanOrchestrator.initialize().catch(error => {
+    console.error("Failed to initialize browser on startup:", error);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'Qavo QA Scanner'
+  });
 });
 
 // Main scan endpoint
 app.post('/api/scan', async (req, res) => {
   try {
-    const { url, scanId, userId, projectId, clientId } = req.body;
+    const { url, scanId, userId, projectId, clientId, settings } = req.body;
 
-    // Validation
     if (!url || !scanId || !userId) {
       return res.status(400).json({
         success: false,
@@ -47,26 +56,27 @@ app.post('/api/scan', async (req, res) => {
       });
     }
 
-    // Start scan asynchronously (don't wait for completion)
-    scanService.performScan({
+    // Start scan asynchronously (don't wait for it to finish)
+    scanOrchestrator.performCompleteScan({
       url,
       scanId,
       userId,
       projectId,
-      clientId
+      clientId,
+      settings: settings || {}
     }).catch(error => {
-      console.error('Scan error:', error);
+      console.error(`--- Unhandled error during scan ${scanId}:`, error);
     });
 
-    // Return immediately with scan ID
-    res.json({
+    // Respond immediately to the client
+    res.status(202).json({
       success: true,
       scanId,
-      message: 'Scan started successfully'
+      message: 'Comprehensive QA scan accepted and started'
     });
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('--- API Error in /api/scan endpoint:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
@@ -76,12 +86,13 @@ app.post('/api/scan', async (req, res) => {
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, closing browser...');
-  await scanService.close();
+  console.log('SIGTERM received, shutting down gracefully...');
+  await scanOrchestrator.close();
   process.exit(0);
 });
 
 app.listen(PORT, () => {
-  console.log(`QA Scan Service running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`🚀 Qavo QA Scan Service running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check available at /health`);
 });
