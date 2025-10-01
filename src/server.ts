@@ -3,8 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { ScanService } from './services/scanService';
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
