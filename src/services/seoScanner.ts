@@ -1,4 +1,4 @@
-mport { Page } from 'playwright';
+import { Page } from 'playwright';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export class SEOScanner {
