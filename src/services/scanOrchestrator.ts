@@ -2,9 +2,6 @@ import { chromium, Browser, Page } from 'playwright';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PerformanceScanner } from './performanceScanner';
 import { AccessibilityScanner } from './accessibilityScanner';
-import { SEOScanner } from './seoScanner';
-import { SecurityScanner } from './securityScanner';
-import { BestPracticesScanner } from './bestPracticesScanner';
 
 interface ScanRequest {
   url: string;
@@ -28,9 +25,6 @@ export class ScanOrchestrator {
   private supabase: SupabaseClient;
   private performanceScanner: PerformanceScanner;
   private accessibilityScanner: AccessibilityScanner;
-  private seoScanner: SEOScanner;
-  private securityScanner: SecurityScanner;
-  private bestPracticesScanner: BestPracticesScanner;
 
   constructor() {
     this.supabase = createClient(
@@ -40,9 +34,6 @@ export class ScanOrchestrator {
 
     this.performanceScanner = new PerformanceScanner(this.supabase);
     this.accessibilityScanner = new AccessibilityScanner(this.supabase);
-    this.seoScanner = new SEOScanner(this.supabase);
-    this.securityScanner = new SecurityScanner(this.supabase);
-    this.bestPracticesScanner = new BestPracticesScanner(this.supabase);
   }
 
   async initialize() {
@@ -81,7 +72,12 @@ export class ScanOrchestrator {
 
       // Capture screenshots at different viewports
       console.log('📸 Capturing screenshots...');
-      const screenshots = { mobile: null, tablet: null, desktop: null };
+      const screenshots: { [key: string]: string | null } = { 
+        mobile: null, 
+        tablet: null, 
+        desktop: null 
+      };
+      
       const viewports = [
         { name: 'mobile', width: 375, height: 667 },
         { name: 'tablet', width: 768, height: 1024 },
@@ -106,15 +102,12 @@ export class ScanOrchestrator {
         .update({ screenshots })
         .eq('id', scanId);
 
-      await this.updateScanStatus(scanId, 'running', 10);
+      await this.updateScanStatus(scanId, 'running', 20);
 
-      // Determine which tests to run
+      // Determine which tests to run (only performance and accessibility available)
       const testsToRun = settings.tests || {
         performance: true,
-        accessibility: true,
-        seo: true,
-        security: true,
-        best_practices: true
+        accessibility: true
       };
 
       const totalTests = Object.values(testsToRun).filter(v => v).length;
@@ -127,7 +120,7 @@ export class ScanOrchestrator {
         const perfIssues = await this.performanceScanner.scan(page, url, scanId);
         allIssues.push(...perfIssues);
         completedTests++;
-        await this.updateScanStatus(scanId, 'running', 10 + (completedTests / totalTests) * 80);
+        await this.updateScanStatus(scanId, 'running', 20 + (completedTests / totalTests) * 70);
       }
 
       // Run Accessibility Scan
@@ -136,34 +129,7 @@ export class ScanOrchestrator {
         const a11yIssues = await this.accessibilityScanner.scan(page, url, scanId);
         allIssues.push(...a11yIssues);
         completedTests++;
-        await this.updateScanStatus(scanId, 'running', 10 + (completedTests / totalTests) * 80);
-      }
-
-      // Run SEO Scan
-      if (testsToRun.seo) {
-        console.log('🔍 Running SEO scan...');
-        const seoIssues = await this.seoScanner.scan(page, url, scanId);
-        allIssues.push(...seoIssues);
-        completedTests++;
-        await this.updateScanStatus(scanId, 'running', 10 + (completedTests / totalTests) * 80);
-      }
-
-      // Run Security Scan
-      if (testsToRun.security) {
-        console.log('🔒 Running security scan...');
-        const secIssues = await this.securityScanner.scan(page, url, scanId);
-        allIssues.push(...secIssues);
-        completedTests++;
-        await this.updateScanStatus(scanId, 'running', 10 + (completedTests / totalTests) * 80);
-      }
-
-      // Run Best Practices Scan
-      if (testsToRun.best_practices) {
-        console.log('✨ Running best practices scan...');
-        const bpIssues = await this.bestPracticesScanner.scan(page, url, scanId);
-        allIssues.push(...bpIssues);
-        completedTests++;
-        await this.updateScanStatus(scanId, 'running', 10 + (completedTests / totalTests) * 80);
+        await this.updateScanStatus(scanId, 'running', 20 + (completedTests / totalTests) * 70);
       }
 
       // Calculate summary
